@@ -20,6 +20,7 @@ And also mixins to implement custom controllers if needed :
 - the `NestedScrollableController` mixin, and its associated
 - `NestedScrollablePosition` mixin, used by the position created by the controller
 
+
 ### With the ScrollableNester widget
 
 ```dart
@@ -80,9 +81,10 @@ ScrollableNester.pageView(
 );
 ```
 
+
 ### Manual controller linking
 
-You can manually attach a `NestedScrollableController` to another one manually, wherever their associated `Scrollable` widget might be insterted in the tree.
+You can manually attach a `NestedScrollableController` to another one, wherever their associated `Scrollable` widget might sit in the tree.
 
 ```dart
 final parentController = NestedPageController();

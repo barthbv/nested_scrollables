@@ -16,11 +16,14 @@ class NestedScrollablesExample extends StatelessWidget {
   const NestedScrollablesExample({super.key});
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       title: 'NestedScrollables Example',
+      scrollBehavior: CustomScrollBehavior(),
       debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        body: const RootPageView(),
+      home: FlutterWebDeviceFrameConstraints(
+        child: Scaffold(
+          body: RootPageView(),
+        ),
       ),
     );
   }
@@ -45,18 +48,18 @@ class RootPageView extends StatelessWidget {
         scrollDirection: Axis.vertical,
         controller: controller,
         physics: ClampingScrollPhysics(),
-        children: [
-          const FirstPage(),
-          const SecondPage(),
-          const ThirdPage(),
+        children: const [
+          NestedFirstPage(),
+          NestedSecondPage(),
+          NestedThirdPage(),
         ],
       ),
     );
   }
 }
 
-class FirstPage extends StatelessWidget {
-  const FirstPage({
+class NestedFirstPage extends StatelessWidget {
+  const NestedFirstPage({
     super.key,
   });
 
@@ -70,23 +73,19 @@ class FirstPage extends StatelessWidget {
           text: '- Page 1 -',
         ),
         
+        /// This ListView occupies the first page of the
+        /// PageView.
+        /// The controller is provided by the ScrollableNester widget and will
+        /// automatically find the controller used by the PageView and set it
+        /// as its parent.
         ScrollableNester.scrollView(
           builder: (context, controller) {
-            final size = MediaQuery.of(context).size;
-            
             return ListView.builder(
               key: const PageStorageKey('firstPageListView'),
-              itemCount: 40,
+              itemCount: 25,
               shrinkWrap: true,
               controller: controller,
-              itemBuilder: (context, i) {
-                return ListTile(
-                  title: Padding(
-                    padding: EdgeInsets.only(left: size.width * 0.2),
-                    child: Text('- $i'),
-                  ),
-                );
-              }
+              itemBuilder: listItemBuilder,
             );
           },
         ),
@@ -95,8 +94,8 @@ class FirstPage extends StatelessWidget {
   }
 }
 
-class SecondPage extends StatelessWidget {
-  const SecondPage({
+class NestedSecondPage extends StatelessWidget {
+  const NestedSecondPage({
     super.key,
   });
 
@@ -117,21 +116,12 @@ class SecondPage extends StatelessWidget {
         /// as its parent.
         ScrollableNester.scrollView(
           builder: (context, controller) {
-            final size = MediaQuery.of(context).size;
-            
             return ListView.builder(
               key: const PageStorageKey('secondPageListView'),
-              itemCount: 70,
+              itemCount: 30,
               shrinkWrap: true,
               controller: controller,
-              itemBuilder: (context, i) {
-                return ListTile(
-                  title: Padding(
-                    padding: EdgeInsets.only(left: size.width * 0.2),
-                    child: Text('- $i'),
-                  ),
-                );
-              }
+              itemBuilder: listItemBuilder,
             );
           },
         ),
@@ -140,14 +130,14 @@ class SecondPage extends StatelessWidget {
   }
 }
 
-class ThirdPage extends StatefulWidget {
-  const ThirdPage({super.key});
+class NestedThirdPage extends StatefulWidget {
+  const NestedThirdPage({super.key});
 
   @override
-  State<ThirdPage> createState() => _ThirdPageState();
+  State<NestedThirdPage> createState() => _NestedThirdPageState();
 }
 
-class _ThirdPageState extends State<ThirdPage> {
+class _NestedThirdPageState extends State<NestedThirdPage> {
   final _topScrollViewController = NestedScrollController();
   final _bottomScrollViewController = NestedScrollController();
   
@@ -162,40 +152,88 @@ class _ThirdPageState extends State<ThirdPage> {
     /// any manual linking of two controllers.
     _bottomScrollViewController.attachParent(_topScrollViewController);
   }
+  
+  static Widget _renderFirstColumn() {
+    return Flex(
+      direction: Axis.horizontal,
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        const Spacer(flex: 1),
+        Flexible(
+          flex: 2,
+          child: PageColumn(
+            child: const Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: 'This ',
+                  ),
+                  TextSpan(
+                    text: 'ScrollView',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                  TextSpan(
+                    text: ' can be scrolled by its neighbour '
+                        'despite not being its ancestor.',
+                  ),
+                ],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+  
+  static Widget _renderSecondColumn() {
+    return PageColumn(
+      color: Colors.amber.shade600,
+      child: const Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(
+              text: 'The left ',
+            ),
+            TextSpan(
+              text: 'ScrollView',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+            TextSpan(
+              text: ' was manually attached to this '
+                  'one as its parent.',
+            ),
+          ],
+        ),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    
     return Stack(
       children: [
-        PageBackground(
+        const PageBackground(
+          backgroundColor: Colors.amber,
           sleeveColor: Colors.amberAccent,
           text: '- Page 3 -',
-          child: Column(
-            children: [
-              Container(
-                color: Colors.amber,
-                height: size.height * 0.7,
-                width: size.width * 0.8,
-              ),
-              Container(
-                color: Colors.amber.shade600,
-                height: size.height * 0.3,
-                width: size.width * 0.8,
-              ),
-            ],
-          ),
         ),
         
         /// This page contains two scrollables that each occupy
         /// a separate part of the screen, yet are still linked via
         /// a NestedScrollableController.
-        Column(
+        Flex(
+          direction: Axis.horizontal,
           children: [
-            SizedBox(
-              width: size.width,
-              height: size.height * 0.7,
+            Expanded(
+              flex: 3,
               
               /// This SingleChildScrollView is manually set as a parent to
               /// the SingleChildScrollView below, despite it not being
@@ -208,34 +246,17 @@ class _ThirdPageState extends State<ThirdPage> {
               child: ScrollableNester(
                 controller: _topScrollViewController,
                 builder: (context, controller) => SingleChildScrollView(
-                  key: const PageStorageKey('thirdPageTopScrollView'),
+                  key: const PageStorageKey('thirdPageLeftColumn'),
                   controller: controller,
                   clipBehavior: Clip.hardEdge,
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                      left: size.width * 0.2 + 16.0,
-                      top: 16.0,
-                      right: 16.0,
-                      bottom: 16.0,
-                    ),
-                    child: Text(
-                      MockTextGenerator.generate(
-                        type: MockTextType.paragraphs,
-                        length: 20,
-                      ),
-                      style: TextStyle(
-                        fontSize: 7.0,
-                        color: Colors.black45,
-                      ),
-                    ),
-                  ),
+                  child: _renderFirstColumn(),
                 ),
               ),
             ),
             
-            SizedBox(
-              width: size.width,
-              height: size.height * 0.3,
+            Expanded(
+              flex: 2,
+              
               /// This SingleChildScrollView doesn't use a
               /// SrollableNester widget as a wrapper, so its controller
               /// will not automatically search for a parent to attach.
@@ -247,40 +268,10 @@ class _ThirdPageState extends State<ThirdPage> {
               /// We want this scrollable to defer to the one above, so we
               /// set the link manually in the initState() function.
               child: SingleChildScrollView(
-                key: const PageStorageKey('thirdPageBottomScrollView'),
+                key: const PageStorageKey('thirdPageRightColumn'),
                 controller: _bottomScrollViewController,
                 clipBehavior: Clip.hardEdge,
-                child: Padding(
-                  padding: EdgeInsets.only(left: size.width * 0.2),
-                  child: Column(
-                    children: [
-                      ColoredBox(
-                        color: Colors.deepPurpleAccent,
-                        child: const Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: Text('The top ScrollView was manually attached as a '
-                              'to this one as a parent.'),
-                        ),
-                      ),
-                      ColoredBox(
-                        color: Colors.deepPurple,
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Text(
-                            MockTextGenerator.generate(
-                              type: MockTextType.paragraphs,
-                              length: 5,
-                            ),
-                            style: TextStyle(
-                              fontSize: 7.0,
-                              color: Colors.black45,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                child: _renderSecondColumn(),
               ),
             ),
           ],

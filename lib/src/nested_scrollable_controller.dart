@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:nested_scrollables/nested_scrollables.dart';
 
 import 'nested_scrollable_position.dart';
 
@@ -60,6 +61,9 @@ mixin NestedScrollableController<T extends NestedScrollablePosition>
     }
   }
   
+  /// Classes that mix in the [NestedScrollableController] must override this
+  /// method to ensure that a compatible [NestedScrollablePosition] is created
+  /// by this controller.
   @override
   T createScrollPosition(
     ScrollPhysics physics,

@@ -1,7 +1,7 @@
 name: nested_scrollables
 description: "Seamless interaction between nested scrollable widgets."
-version: 0.1.0
-homepage:
+version: 0.2.0
+repository: https://github.com/barthbv/nested_scrollables
 
 environment:
   sdk: ^3.11.1

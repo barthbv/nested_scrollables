@@ -28,6 +28,7 @@ abstract class ScrollableNester extends StatelessWidget {
     Key? key,
     NestedScrollController? controller,
     bool? primary,
+    bool keepNestedScrollOrigin,
     required Widget Function(BuildContext context, NestedScrollController controller) builder,
   }) = _ScrollViewNester;
   
@@ -105,6 +106,7 @@ class _ScrollViewNester
     super.key,
     this.controller,
     this.primary,
+    this.keepNestedScrollOrigin = true,
     required this.builder,
   });
   
@@ -112,11 +114,15 @@ class _ScrollViewNester
   final NestedScrollController? controller;
   @override
   final bool? primary;
+  final bool keepNestedScrollOrigin;
   @override
   final Widget Function(BuildContext context, NestedScrollController controller) builder;
   
   @override
-  NestedScrollController _createController() => NestedScrollController(nestRoot: primary);
+  NestedScrollController _createController() => NestedScrollController(
+      primary: primary,
+      keepNestedScrollOrigin: keepNestedScrollOrigin,
+    );
 }
 
 /// Returned by [ScrollableNester.pageView].
@@ -140,7 +146,7 @@ class _PageViewNester
   final Widget Function(BuildContext context, NestedPageController controller) builder;
   
   @override
-  NestedPageController _createController() => NestedPageController(nestRoot: primary);
+  NestedPageController _createController() => NestedPageController(primary: primary);
 }
 
 /// The controller provider.

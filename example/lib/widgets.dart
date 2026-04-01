@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class PageBackground extends StatelessWidget {
@@ -7,30 +8,23 @@ class PageBackground extends StatelessWidget {
     this.sleeveColor = Colors.transparent,
     this.text = '',
     this.sleeveWidthRatio = 0.2,
-    this.child,
   });
   
   final Color backgroundColor;
   final Color sleeveColor;
   final String text;
   final double sleeveWidthRatio;
-  final Widget? child;
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    
-    return Container(
-      color: backgroundColor,
-      width: size.width,
-      height: size.height,
-      alignment: Alignment.topLeft,
-      child: Row(
-        children: [
-          Container(
+    return SizedBox.expand(
+      child: ColoredBox(
+        color: backgroundColor,
+        child: FractionallySizedBox(
+          alignment: AlignmentGeometry.topLeft,
+          widthFactor: sleeveWidthRatio,
+          child: ColoredBox(
             color: sleeveColor,
-            width: size.width * sleeveWidthRatio,
-            height: size.height,
             child: Center(
               child: RotatedBox(
                 quarterTurns: -1,
@@ -38,37 +32,74 @@ class PageBackground extends StatelessWidget {
               ),
             ),
           ),
-          ?child,
-        ],
+        ),
       ),
     );
   }
 }
 
-class Sleeve extends StatelessWidget {
-  const Sleeve({
+class PageColumn extends StatelessWidget {
+  const PageColumn({
     super.key,
-    this.color = Colors.transparent,
-    this.text = '',
-    this.widthRatio = 0.2,
+    this.whiteSpaceRatio = 0.5,
+    this.color,
+    required this.child,
   });
   
-  final Color color;
-  final String text;
-  final double widthRatio;
+  final double whiteSpaceRatio;
+  final Color? color;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
+    Widget content = Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        children: [
+          const Icon(Icons.arrow_drop_up_sharp),
+          Padding(
+            padding: EdgeInsets.symmetric(
+              vertical: MediaQuery.sizeOf(context).height * whiteSpaceRatio,
+            ),
+            child: child,
+          ),
+          const Icon(Icons.arrow_drop_down_sharp),
+        ],
+      ),
+    );
     
-    return Container(
-      color: color,
-      width: size.width * widthRatio,
-      height: size.height,
+    if (color != null) {
+      content = ColoredBox(
+        color: color!,
+        child: content,
+      );
+    }
+    
+    return content;
+  }
+}
+
+class FlutterWebDeviceFrameConstraints extends StatelessWidget {
+  const FlutterWebDeviceFrameConstraints({
+    super.key,
+    required this.child,
+  });
+  
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!kIsWeb) return child;
+    
+    return ColoredBox(
+      color: Colors.black87,
       child: Center(
-        child: RotatedBox(
-          quarterTurns: -1,
-          child: Text(text),
+        child: ConstrainedBox(
+          constraints: BoxConstraints.loose(const Size(432, 912)),
+          child: AspectRatio(
+            aspectRatio: 9/16,
+            child: child,
+          ),
         ),
       ),
     );

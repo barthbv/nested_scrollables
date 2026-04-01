@@ -6,30 +6,185 @@ import 'package:flutter/widgets.dart';
 import 'nested_scrollable_controller.dart';
 import 'nested_scrollable_position.dart';
 
-// This code is for the most part shamelessly copied from the Flutter
+// This code is for the most part dupilcated from the Flutter
 // libraries, as the PageController creates the private _PagePosition,
-// and uses private members of that class as well.
+// and the page scrolling behavior sits in private members and methods
+// in both classes.
 // 
 // Extending the PageController to use a custom NestedPagePosition would
-// break page scrolling behaviors, so in the meantime, copied code it is.
+// break that behavior, but since none of it is directly altered by this
+// package, it didn't make sense to reimplement all of it.
+// 
+// The duplicated classes are kept separate and their content unmodified
+// for clarity and to maintain proper ownership of the code contained in
+// this page.
 
 /// The [NestedScrollableController] behaves like a [PageController]
 /// with nestable capabilities.
 /// See [NestedScrollableController] for details on the nesting behavior.
 class NestedPageController
-    extends ScrollController
-    with NestedScrollableController<NestedPagePosition>
-    implements PageController {
+    extends _DuplicatedPageController
+    with NestedScrollableController<NestedPagePosition> {
   
-  /// Creates a page controller.
   NestedPageController({
+    super.initialPage,
+    super.keepPage,
+    super.viewportFraction,
+    super.onAttach,
+    super.onDetach,
+    bool? primary,
+  })  : nestRoot = primary;
+  
+  /// See [NestedScrollableController.nestRoot]
+  @override
+  final bool? nestRoot;
+
+  @override
+  NestedPagePosition createScrollPosition(
+    ScrollPhysics physics,
+    ScrollContext context,
+    ScrollPosition? oldPosition,
+  ) => NestedPagePosition(
+      physics: physics,
+      context: context,
+      initialPage: initialPage,
+      keepPage: keepPage,
+      viewportFraction: viewportFraction,
+      oldPosition: oldPosition,
+    );
+}
+
+/// The [ScrollPosition] used by a [NestedPageController].
+class NestedPagePosition
+    extends _DuplicatedPagePosition
+    with NestedScrollablePosition {
+  NestedPagePosition({
+    required super.physics,
+    required super.context,
+    super.initialPage,
+    super.keepPage,
+    super.viewportFraction,
+    super.oldPosition,
+  });
+  
+  /// See [NestedScrollablePosition.minRelativeScrollExtent]
+  @override
+  double get minRelativeScrollExtent => getPixelsFromPage(page!.floorToDouble());
+  /// See [NestedScrollablePosition.maxRelativeScrollExtent]
+  @override
+  double get maxRelativeScrollExtent => getPixelsFromPage(page!.ceilToDouble());
+  
+  /// See [NestedScrollablePosition.scrollExtentContainsSnapPoint]
+  @override
+  bool get scrollExtentContainsSnapPoint => true;
+}
+
+
+/// The following classes are directly duplicated from the Flutter SDK.
+/// Page scrolling behavior is left untouched in the [NestedPageController]
+/// and [NestedPagePosition] classes.
+/// 
+/// See the [PageController] and its associated `_PagePosition` in the
+/// official libraries.
+
+// Copyright 2014 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the Flutter SDK's LICENSE file.
+
+/// A controller for [PageView].
+///
+/// A page controller lets you manipulate which page is visible in a [PageView].
+/// In addition to being able to control the pixel offset of the content inside
+/// the [PageView], a [PageController] also lets you control the offset in terms
+/// of pages, which are increments of the viewport size.
+///
+/// See also:
+///
+///  * [PageView], which is the widget this object controls.
+///
+/// {@tool snippet}
+///
+/// This widget introduces a [MaterialApp], [Scaffold] and [PageView] with two pages
+/// using the default constructor. Both pages contain an [ElevatedButton] allowing you
+/// to animate the [PageView] using a [PageController].
+///
+/// ```dart
+/// class MyPageView extends StatefulWidget {
+///   const MyPageView({super.key});
+///
+///   @override
+///   State<MyPageView> createState() => _MyPageViewState();
+/// }
+///
+/// class _MyPageViewState extends State<MyPageView> {
+///   final PageController _pageController = PageController();
+///
+///   @override
+///   void dispose() {
+///     _pageController.dispose();
+///     super.dispose();
+///   }
+///
+///   @override
+///   Widget build(BuildContext context) {
+///     return MaterialApp(
+///       home: Scaffold(
+///         body: PageView(
+///           controller: _pageController,
+///           children: <Widget>[
+///             ColoredBox(
+///               color: Colors.red,
+///               child: Center(
+///                 child: ElevatedButton(
+///                   onPressed: () {
+///                     if (_pageController.hasClients) {
+///                       _pageController.animateToPage(
+///                         1,
+///                         duration: const Duration(milliseconds: 400),
+///                         curve: Curves.easeInOut,
+///                       );
+///                     }
+///                   },
+///                   child: const Text('Next'),
+///                 ),
+///               ),
+///             ),
+///             ColoredBox(
+///               color: Colors.blue,
+///               child: Center(
+///                 child: ElevatedButton(
+///                   onPressed: () {
+///                     if (_pageController.hasClients) {
+///                       _pageController.animateToPage(
+///                         0,
+///                         duration: const Duration(milliseconds: 400),
+///                         curve: Curves.easeInOut,
+///                       );
+///                     }
+///                   },
+///                   child: const Text('Previous'),
+///                 ),
+///               ),
+///             ),
+///           ],
+///         ),
+///       ),
+///     );
+///   }
+/// }
+/// ```
+/// {@end-tool}
+class _DuplicatedPageController
+    extends ScrollController
+    implements PageController {
+  /// Creates a page controller.
+  _DuplicatedPageController({
     this.initialPage = 0,
     this.keepPage = true,
     this.viewportFraction = 1.0,
     super.onAttach,
     super.onDetach,
-    this.nestRoot,
-  })  : assert(viewportFraction > 0.0);
+  }) : assert(viewportFraction > 0.0);
 
   /// The page to show when first creating the [PageView].
   @override
@@ -61,25 +216,21 @@ class NestedPageController
   /// {@endtemplate}
   @override
   final double viewportFraction;
-  
-  /// See [NestedScrollableController.nestRoot]
-  @override
-  final bool? nestRoot;
 
   /// The current page displayed in the controlled [PageView].
   ///
-  /// There are circumstances that this [PageController] can't know the current
+  /// There are circumstances that this [_DuplicatedPageController] can't know the current
   /// page. Reading [page] will throw an [AssertionError] in the following cases:
   ///
-  /// 1. No [PageView] is currently using this [PageController]. Once a
-  /// [PageView] starts using this [PageController], the new [page]
+  /// 1. No [PageView] is currently using this [_DuplicatedPageController]. Once a
+  /// [PageView] starts using this [_DuplicatedPageController], the new [page]
   /// position will be derived:
   ///
   ///   * First, based on the attached [PageView]'s [BuildContext] and the
   ///     position saved at that context's [PageStorage] if [keepPage] is true.
-  ///   * Second, from the [PageController]'s [initialPage].
+  ///   * Second, from the [_DuplicatedPageController]'s [initialPage].
   ///
-  /// 2. More than one [PageView] using the same [PageController].
+  /// 2. More than one [PageView] using the same [_DuplicatedPageController].
   ///
   /// The [hasClients] property can be used to check if a [PageView] is attached
   /// prior to accessing [page].
@@ -94,6 +245,7 @@ class NestedPageController
       'The page property cannot be read when multiple PageViews are attached to '
       'the same PageController.',
     );
+    final position = this.position as _DuplicatedPagePosition;
     return position.page;
   }
 
@@ -114,6 +266,7 @@ class NestedPageController
   @override
   Future<void> animateToPage(int page, {required Duration duration, required Curve curve}) {
     assert(_debugCheckPageControllerAttached());
+    final position = this.position as _DuplicatedPagePosition;
     if (position._cachedPage != null) {
       position._cachedPage = page.toDouble();
       return Future<void>.value();
@@ -138,6 +291,7 @@ class NestedPageController
   @override
   void jumpToPage(int page) {
     assert(_debugCheckPageControllerAttached());
+    final position = this.position as _DuplicatedPagePosition;
     if (position._cachedPage != null) {
       position._cachedPage = page.toDouble();
       return;
@@ -169,13 +323,13 @@ class NestedPageController
     return animateToPage(page!.round() - 1, duration: duration, curve: curve);
   }
 
-  // Modified from Flutter SDK
   @override
-  NestedPagePosition createScrollPosition(
+  ScrollPosition createScrollPosition(
     ScrollPhysics physics,
     ScrollContext context,
     ScrollPosition? oldPosition,
-  ) => NestedPagePosition(
+  ) {
+    return _DuplicatedPagePosition(
       physics: physics,
       context: context,
       initialPage: initialPage,
@@ -183,22 +337,21 @@ class NestedPageController
       viewportFraction: viewportFraction,
       oldPosition: oldPosition,
     );
+  }
 
-  // Modified from Flutter SDK
   @override
   void attach(ScrollPosition position) {
     super.attach(position);
-    final NestedPagePosition pagePosition = position as NestedPagePosition;
+    final pagePosition = position as _DuplicatedPagePosition;
     pagePosition.viewportFraction = viewportFraction;
   }
 }
 
-/// The [ScrollPosition] used by a [NestedPageController].
-class NestedPagePosition
+/// Duplicate of the [_PagePosition] class.
+class _DuplicatedPagePosition
     extends ScrollPositionWithSingleContext
-    with NestedScrollablePosition
     implements PageMetrics {
-  NestedPagePosition({
+  _DuplicatedPagePosition({
     required super.physics,
     required super.context,
     this.initialPage = 0,
@@ -277,17 +430,6 @@ class NestedPagePosition
   double getPixelsFromPage(double page) {
     return page * viewportDimension * viewportFraction + _initialPageOffset;
   }
-  
-  /// See [NestedScrollablePosition.minRelativeScrollExtent]
-  @override
-  double get minRelativeScrollExtent => getPixelsFromPage(page!.floorToDouble());
-  /// See [NestedScrollablePosition.maxRelativeScrollExtent]
-  @override
-  double get maxRelativeScrollExtent => getPixelsFromPage(page!.ceilToDouble());
-  
-  /// See [NestedScrollablePosition.scrollExtentContainsSnapPoint]
-  @override
-  bool get scrollExtentContainsSnapPoint => true;
 
   @override
   double? get page {
@@ -318,7 +460,7 @@ class NestedPagePosition
   @override
   void restoreScrollOffset() {
     if (!hasPixels) {
-      final double? value =
+      final value =
           PageStorage.maybeOf(context.storageContext)?.readState(context.storageContext) as double?;
       if (value != null) {
         _pageToUseOnStartup = value;
@@ -375,7 +517,7 @@ class NestedPagePosition
     super.absorb(other);
     assert(_cachedPage == null);
 
-    if (other is! NestedPagePosition) {
+    if (other is! _DuplicatedPagePosition) {
       return;
     }
 
